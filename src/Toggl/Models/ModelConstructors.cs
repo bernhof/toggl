@@ -10,7 +10,7 @@
             Id = basedOn.Id;
             WorkspaceId = basedOn.WorkspaceId;
             Name = basedOn.Name;
-            LastUpdated = basedOn.LastUpdated;
+            LastModified = basedOn.LastModified;
         }
     }
 
@@ -41,7 +41,7 @@
             Id = basedOn.Id;
             WorkspaceId = basedOn.WorkspaceId;
             Name = basedOn.Name;
-            LastUpdated = basedOn.LastUpdated;
+            LastModified = basedOn.LastModified;
         }
     }
 
@@ -59,7 +59,7 @@
             UserId = basedOn.UserId;
             EstimatedSeconds = basedOn.EstimatedSeconds;
             Active = basedOn.Active;
-            LastUpdated = basedOn.LastUpdated;
+            LastModified = basedOn.LastModified;
             TrackedSeconds = basedOn.TrackedSeconds;
         }
     }
@@ -82,7 +82,7 @@
             Description = basedOn.Description;
             TagNames = basedOn.TagNames;
             TagIds = basedOn.TagIds;
-            LastUpdated = basedOn.LastUpdated;
+            LastModified = basedOn.LastModified;
             ServerDeletedAt = basedOn.ServerDeletedAt;
             UserId = basedOn.UserId;
             CreatedWith = basedOn.CreatedWith;

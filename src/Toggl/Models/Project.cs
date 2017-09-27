@@ -29,31 +29,56 @@ namespace Toggl.Models
      "cid":27279539}
      */
 
+    /// <summary>
+    /// A project.
+    /// </summary>
     public partial class Project : IBaseModel
     {
+        /// <summary>
+        /// Project ID
+        /// </summary>
         [JsonProperty("id")]
         public long Id { get; set; }
 
+        /// <summary>
+        /// Project name
+        /// </summary>
         [JsonProperty("name")]
         public string Name { get; set; }
 
+        /// <summary>
+        /// ID of client to which project belongs
+        /// </summary>
         [JsonProperty("client_id")]
         public long? ClientId { get; set; }
 
+        /// <summary>
+        /// ID of workspace to which project belongs
+        /// </summary>
         [JsonProperty("workspace_id")]
         public long WorkspaceId { get; set; }
 
+        /// <summary>
+        /// Project color (HTML/CSS style, e.g. &quot;#0033ff&quot;)
+        /// </summary>
         [JsonProperty("color")]
         public string Color { get; set; }
 
+        /// <summary>
+        /// Specifies whether time logged on project is billable. Default is false.
+        /// </summary>
         [JsonProperty("billable")]
         public bool Billable { get; set; }
-
+        
         [JsonProperty("is_private")]
         public bool Private { get; set; }
 
+        /// <summary>
+        /// Specifies whether project is active. If false, project is considered archived.
+        /// Default is true.
+        /// </summary>
         [JsonProperty("active")]
         public bool Active { get => m_Active; set => m_Active = value; }
-        private bool m_Active = true;
+        private bool m_Active = true; // default value: true
     }
 }

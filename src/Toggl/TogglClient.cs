@@ -18,20 +18,50 @@ namespace Toggl
     /// </summary>
     public partial class TogglClient : IDisposable
     {
-        const string BaseUrl = "https://www.toggl.com/api/v9/";
+        #region Services
 
+        /// <summary>
+        /// Client service
+        /// </summary>
         public ClientService Clients { get; }
+        /// <summary>
+        /// Time entry service
+        /// </summary>
         public TimeEntryService TimeEntries { get; }
+        /// <summary>
+        /// Project service
+        /// </summary>
         public ProjectService Projects { get; }
+        /// <summary>
+        /// Tag service
+        /// </summary>
         public TagService Tags { get; }
+        /// <summary>
+        /// Task service
+        /// </summary>
         public TaskService Tasks { get; }
+        /// <summary>
+        /// Workspace service
+        /// </summary>
         public WorkspaceService Workspaces { get; }
+
+        #endregion
+
+        const string BaseUrl = "https://www.toggl.com/api/v9/";
 
         private readonly JsonSerializer _jsonSerializer;
         private readonly HttpClient _httpClient;
 
+        /// <summary>
+        /// User-Agent header information to include in requests. Default is null.
+        /// If null, User-Agent header will not be included in requests.
+        /// </summary>
         public ProductInfoHeaderValue UserAgent { get; set; }
 
+        /// <summary>
+        /// Creates new <see cref="TogglClient"/>
+        /// </summary>
+        /// <param name="apiToken">Toggl API token</param>
         public TogglClient(string apiToken)
         {
             Clients = new ClientService(this);
@@ -41,7 +71,7 @@ namespace Toggl
             Tasks = new TaskService(this);
             Workspaces = new WorkspaceService(this);
 
-            _jsonSerializer = new JsonSerializer();
+            _jsonSerializer = JsonSerializer.CreateDefault();
 
             _httpClient = new HttpClient();
             _httpClient.BaseAddress = new Uri(BaseUrl);
@@ -51,12 +81,14 @@ namespace Toggl
                 _httpClient.DefaultRequestHeaders.UserAgent.Add(UserAgent);
 
             // authorization (basic)
-            var authorizationParameter = Convert.ToBase64String(Encoding.GetEncoding("ascii")
-                .GetBytes($"{apiToken}:api_token"));
+            var authorizationParameter = Convert.ToBase64String(Encoding.GetEncoding("ascii").GetBytes($"{apiToken}:api_token"));
             var header = new AuthenticationHeaderValue("Basic", authorizationParameter);
             _httpClient.DefaultRequestHeaders.Authorization = header;
         }
 
+        /// <summary>
+        /// Releases all resources.
+        /// </summary>
         public void Dispose()
         {
             _httpClient.Dispose();
@@ -73,7 +105,7 @@ namespace Toggl
         internal async Task<T> Put<T>(string uri, object model)
             => await RequestAsync<T>(HttpMethod.Put, uri, model);
 
-        private StringContent GetJsonContent(string json)
+        protected virtual StringContent GetJsonContent(string json)
             => new StringContent(json, Encoding.UTF8, "application/json");
 
         /// <summary>
@@ -117,7 +149,7 @@ namespace Toggl
             return items;
         }
 
-        protected virtual async Task<T> RequestAsync<T>(HttpMethod method, string uri, object model = null)
+        internal virtual async Task<T> RequestAsync<T>(HttpMethod method, string uri, object model = null)
         {
             var request = new HttpRequestMessage(method, uri);
             if (model != null)
@@ -135,20 +167,38 @@ namespace Toggl
             return result;
         }
 
-        public object GetMinimalModelForUpdate<T>(T current, T previous, out bool hasChanges, string[] skipProperties = null)
+        /// <summary>
+        /// Compares current item and a snapshot of its previous state to supply the most minimal payload (model) when performing updates
+        /// where only changed fields are necessary to include in request.
+        /// </summary>
+        /// <typeparam name="T">Type of item being updated</typeparam>
+        /// <param name="current">Item with current property values</param>
+        /// <param name="previous">A copy of the item with property values before changes were made</param>
+        /// <param name="changed">Returns a value indicating whether any changes were found on item based on comparison</param>
+        /// <param name="skipProperties">Specifies properties of <typeparamref name="T"/> that should be ignored completely</param>
+        /// <returns>
+        /// If <paramref name="previous"/> is not null, returns a <see cref="JObject"/> that contains the payload necessary to perform the update.
+        /// Otherwise, this method simply returns <paramref name="current"/>.
+        /// </returns>
+        /// <remarks>
+        /// Properties marked with <see cref="JsonIgnoreAttribute"/> are ignored.
+        /// Property names are extracted from any <see cref="JsonPropertyAttribute"/>s, if present. Otherwise uses actual property names in model.
+        /// </remarks>
+        internal virtual object GetMinimalModelForUpdate<T>(T current, T previous, out bool changed, string[] skipProperties = null)
             where T : IBaseModel
         {
             if (current == null) throw new ArgumentNullException(nameof(current));
             if (previous == null)
             {
                 // No previous state to compare to, so cannot create minimal model. Instead return full model.
-                hasChanges = true; // Assume there are changes to save, since we can't tell.
+                changed = true; // Assume there are changes to save, since we can't tell.
                 return current;
             }
 
             var properties = typeof(T).GetTypeInfo().DeclaredProperties;
             var model = new JObject();
-            hasChanges = false;
+            changed = false;
+
             // always include ID
             model.Add("id", current.Id);
 
@@ -159,18 +209,21 @@ namespace Toggl
                 if (attributes.OfType<JsonIgnoreAttribute>().Any()) continue; // don't check or serialize ignored attributes
                 if (skipProperties != null && skipProperties.Any(p => p == prop.Name)) continue; // skip specified properties
 
+                // See if property value was changed by comparing current value to previous
                 var value = prop.GetValue(current);
                 if (!Equals(prop.GetValue(previous), value))
                 {
+                    // Property value has changed, and should be included in payload.
                     var attr = attributes.OfType<JsonPropertyAttribute>().FirstOrDefault();
-                    string propertyName;
-                    if (attr != null && !string.IsNullOrEmpty(attr.PropertyName))
-                        propertyName = attr.PropertyName;
-                    else
-                        propertyName = prop.Name;
+                    // Use the correct property name; that is, if JsonPropertyAttribute is present, use that name.
+                    // Otherwise fall back to property name.
+                    string propertyName = (attr != null && !string.IsNullOrEmpty(attr.PropertyName))
+                        ? attr.PropertyName
+                        : prop.Name;
 
+                    // Add property to model
                     model.Add(propertyName, JToken.FromObject(value));
-                    hasChanges = true;
+                    changed = true;
                 }
             }
             return model;

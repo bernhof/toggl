@@ -7,10 +7,19 @@ using Toggl.Services;
 
 namespace Toggl
 {
+    /// <summary>
+    /// Provides different utility methods for working with Toggl
+    /// </summary>
     public static class Utilities
     {
         private static readonly Random _defaultRandom = new Random();
         
+        /// <summary>
+        /// Gets a random color in HTML/CSS-style hexadecimal format, e.g. &quot;#0033ff&quot;.
+        /// Useful for generating random colors for projects in Toggl.
+        /// </summary>
+        /// <param name="random"><see cref="Random"/> instance to use when generating random color</param>
+        /// <returns>A string representing a color in HTML/CSS-style hexadecimal format.</returns>
         public static string GetRandomColor(Random random = null)
         {
             random = random ?? _defaultRandom;

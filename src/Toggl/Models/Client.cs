@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace Toggl.Models
 {
+    /// <summary>
+    /// A client.
+    /// </summary>
     public partial class Client : IBaseModel
     {
         /*
@@ -17,14 +20,30 @@ namespace Toggl.Models
          "at":"2017-08-22T08:18:19+00:00"
          }
         */
+
+        /// <summary>
+        /// Client ID
+        /// </summary>
         [JsonProperty("id")]
         public long Id { get; set; }
+
+        /// <summary>
+        /// Workspace ID
+        /// </summary>
         [JsonProperty("wid")]
         public long WorkspaceId { get; set; }
+
+        /// <summary>
+        /// Client name
+        /// </summary>
         [JsonProperty("name")]
         public string Name { get; set; }
-        [JsonProperty("at")]
-        public DateTime LastUpdated { get; set; }
+
+        /// <summary>
+        /// Date/time on which client was last modified
+        /// </summary>
+        [JsonProperty("at"), JsonIgnore]
+        public DateTimeOffset LastModified { get; set; }
 
     }
 }

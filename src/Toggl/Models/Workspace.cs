@@ -2,6 +2,9 @@
 
 namespace Toggl.Models
 {
+    /// <summary>
+    /// A workspace.
+    /// </summary>
     public partial class Workspace : IBaseModel
     {
         /*
@@ -47,9 +50,15 @@ namespace Toggl.Models
             "subscription":null}
         */
 
+        /// <summary>
+        /// Workspace ID
+        /// </summary>
         [JsonProperty("id")]
         public long Id { get; set; }
 
+        /// <summary>
+        /// Workspace name
+        /// </summary>
         [JsonProperty("name")]
         public string Name { get; set; }
 
