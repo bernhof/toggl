@@ -15,12 +15,18 @@ namespace Toggl.Services
             _client = client;
         }
 
-        public async Task<Tag> CreateTagAsync(Tag tag)
+        public async Task<List<Tag>> ListAsync(long workspaceId)
+        {
+            string uri = $"workspaces/{workspaceId}/tags";
+            var response = await _client.Get<List<Tag>>(uri);
+            return response;
+        }
+
+        public async Task<Tag> CreateAsync(Tag tag)
         {
             string uri = $"workspaces/{tag.WorkspaceId}/tags";
             var result = await _client.Post(uri, tag);
             return result;
         }
-
     }
 }

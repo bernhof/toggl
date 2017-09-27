@@ -15,7 +15,7 @@ namespace Toggl.Services
             _client = client;
         }
 
-        public async Task<Client> CreateClientAsync(Client client)
+        public async Task<Client> CreateAsync(Client client)
         {
             string uri = $"workspaces/{client.WorkspaceId}/clients";
             var result = await _client.Post(uri, client);

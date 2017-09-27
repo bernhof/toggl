@@ -12,14 +12,14 @@ namespace Toggl.Models
         /*
          * [{"
          * id":3248907,"
-         * fullname":"Søren Dommerby","
-         * email":"sd@nddata.dk","
+         * fullname":"Somebody","
+         * email":"her@email.com","
          * is_active":true,"
          * is_admin":false,"
          * inactive":false},{"
          * id":3216134,"
-         * fullname":"Mikkel Bernhof Jakobsen","
-         * email":"mj@nddata.dk","
+         * fullname":"Another somebody","
+         * email":"his@email.com","
          * is_active":true,"
          * is_admin":true,"
          * inactive":false}]
