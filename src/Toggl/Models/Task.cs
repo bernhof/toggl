@@ -6,7 +6,7 @@ namespace Toggl.Models
     /// <summary>
     /// A task.
     /// </summary>
-    public partial class Task : IBaseModel
+    public partial class Task : IEntity
     {
         /// <summary>
         /// Task ID

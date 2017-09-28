@@ -32,7 +32,7 @@ namespace Toggl.Models
     /// <summary>
     /// A project.
     /// </summary>
-    public partial class Project : IBaseModel
+    public partial class Project : IEntity
     {
         /// <summary>
         /// Project ID

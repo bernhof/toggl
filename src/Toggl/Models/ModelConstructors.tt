@@ -13,7 +13,7 @@ namespace Toggl.Models
     foreach(var modelFile in modelsToGenerate)
     {
         var className = Path.GetFileName(modelFile).Replace(".cs", "");
-		if (className == "IBaseModel") continue;
+		if (className == "IEntity") continue;
 		if (className == "PagedResult") continue;
 		if (className + ".tt" == Path.GetFileName(Host.TemplateFile)) continue;
         if (!isFirst)

@@ -1,31 +1,51 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Toggl.Models;
 
 namespace Toggl.Services
 {
+    /// <summary>
+    /// Manages tags
+    /// </summary>
     public partial class TagService
     {
         private readonly TogglClient _client;
 
+        /// <summary>
+        /// Creates a new <see cref="TagService"/>
+        /// </summary>
+        /// <param name="client">Current <see cref="TogglClient"/></param>
         public TagService(TogglClient client)
         {
             _client = client;
         }
 
-        public async Task<List<Tag>> ListAsync(long workspaceId)
+        /// <summary>
+        /// Lists all tags in a workspace
+        /// </summary>
+        /// <param name="workspaceId">Workspace ID</param>
+        /// <param name="cancellationToken">Token to observe</param>
+        /// <returns>A list of tags in the workspace</returns>
+        public async Task<List<Tag>> ListAsync(long workspaceId, CancellationToken cancellationToken = default(CancellationToken))
         {
             string uri = $"workspaces/{workspaceId}/tags";
-            var response = await _client.Get<List<Tag>>(uri);
+            var response = await _client.Get<List<Tag>>(uri, cancellationToken);
             return response;
         }
 
-        public async Task<Tag> CreateAsync(Tag tag)
+        /// <summary>
+        /// Creates a new tag
+        /// </summary>
+        /// <param name="tag">A new tag</param>
+        /// <param name="cancellationToken">Token to observe</param>
+        /// <returns>The new tag as presented by server</returns>
+        public async Task<Tag> CreateAsync(Tag tag, CancellationToken cancellationToken = default(CancellationToken))
         {
             string uri = $"workspaces/{tag.WorkspaceId}/tags";
-            var result = await _client.Post(uri, tag);
+            var result = await _client.Post(uri, cancellationToken, tag);
             return result;
         }
     }

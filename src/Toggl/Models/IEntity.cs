@@ -6,8 +6,14 @@ using System.Threading.Tasks;
 
 namespace Toggl.Models
 {
-    public interface IBaseModel
+    /// <summary>
+    /// Represents an entity with an ID
+    /// </summary>
+    public interface IEntity
     {
+        /// <summary>
+        /// ID of entity
+        /// </summary>
         long Id { get; set; }
     }
 }

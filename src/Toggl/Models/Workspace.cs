@@ -5,7 +5,7 @@ namespace Toggl.Models
     /// <summary>
     /// A workspace.
     /// </summary>
-    public partial class Workspace : IBaseModel
+    public partial class Workspace : IEntity
     {
         /*
          v8:

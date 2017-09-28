@@ -10,7 +10,7 @@ namespace Toggl.Models
     /// <summary>
     /// A tag.
     /// </summary>
-    public partial class Tag : IBaseModel
+    public partial class Tag : IEntity
     {
         /// <summary>
         /// Tag ID

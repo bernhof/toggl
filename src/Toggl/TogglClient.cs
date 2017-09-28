@@ -7,10 +7,13 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Toggl.Models;
 using Toggl.Services;
+using Toggl.Throttling;
 
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Toggl.Tests")]
 namespace Toggl
 {
     /// <summary>
@@ -18,6 +21,20 @@ namespace Toggl
     /// </summary>
     public partial class TogglClient : IDisposable
     {
+        /// <summary>
+        /// Creates a throttler that is guaranteed to not exceed rate limits as per Toggl API documentation.
+        /// (https://github.com/toggl/toggl_api_docs#the-api-format)
+        /// </summary>
+        /// <returns>A <see cref="LeakyBucketThrottler"/> that allows one request per second.</returns>
+        /// <remarks>
+        /// Note that guarantee only holds for a single instance of <see cref="LeakyBucketThrottler"/> with the assumption
+        /// that leaky bucket is empty at the time of performing the first request.
+        /// </remarks>
+        public static LeakyBucketThrottler CreateSafeThrottler()
+        {
+            return new LeakyBucketThrottler(TimeSpan.FromSeconds(1), 1);
+        }
+
         #region Services
 
         /// <summary>
@@ -47,10 +64,11 @@ namespace Toggl
 
         #endregion
 
-        const string BaseUrl = "https://www.toggl.com/api/v9/";
+        const string _baseUrl = "https://www.toggl.com/api/v9/";
 
         private readonly JsonSerializer _jsonSerializer;
         private readonly HttpClient _httpClient;
+        private readonly IThrottler _throttler;
 
         /// <summary>
         /// User-Agent header information to include in requests. Default is null.
@@ -62,7 +80,8 @@ namespace Toggl
         /// Creates new <see cref="TogglClient"/>
         /// </summary>
         /// <param name="apiToken">Toggl API token</param>
-        public TogglClient(string apiToken)
+        /// <param name="throttler">Throttler to use when invoking methods. If null, no throttling is performed</param>
+        public TogglClient(string apiToken, IThrottler throttler = null)
         {
             Clients = new ClientService(this);
             TimeEntries = new TimeEntryService(this);
@@ -72,9 +91,10 @@ namespace Toggl
             Workspaces = new WorkspaceService(this);
 
             _jsonSerializer = JsonSerializer.CreateDefault();
+            _throttler = throttler ?? new NeutralThrottler();
 
             _httpClient = new HttpClient();
-            _httpClient.BaseAddress = new Uri(BaseUrl);
+            _httpClient.BaseAddress = new Uri(_baseUrl);
             _httpClient.DefaultRequestHeaders.Accept.Clear();
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             if (UserAgent != null)
@@ -96,16 +116,16 @@ namespace Toggl
 
         #region Helpers
 
-        internal async Task<T> Get<T>(string uri, object model = null)
+        internal async Task<T> Get<T>(string uri, CancellationToken cancellationToken, object model = null)
             => await RequestAsync<T>(HttpMethod.Get, uri, model);
 
-        internal async Task<T> Post<T>(string uri, T model)
-            => await RequestAsync<T>(HttpMethod.Post, uri, model);
+        internal async Task<T> Post<T>(string uri, CancellationToken cancellationToken, T model)
+            => await RequestAsync<T>(HttpMethod.Post, uri, model, cancellationToken);
 
-        internal async Task<T> Put<T>(string uri, object model)
+        internal async Task<T> Put<T>(string uri, CancellationToken cancellationToken, object model)
             => await RequestAsync<T>(HttpMethod.Put, uri, model);
 
-        protected virtual StringContent GetJsonContent(string json)
+        private StringContent GetJsonContent(string json)
             => new StringContent(json, Encoding.UTF8, "application/json");
 
         /// <summary>
@@ -115,30 +135,33 @@ namespace Toggl
         /// <param name="pagedQuery">Query delegate function</param>
         /// <param name="fromPage">First page to read</param>
         /// <param name="toPage">Last page to read (inclusive)</param>
+        /// <param name="cancellationToken">Token to observe</param>
         /// <returns>All items in the specified page range</returns>
         /// <example>
         /// <code>
         /// var result = await togglClient.GetPages(page => togglClient.Tasks.ListAsync(workspaceId: 1234567, page: page));
         /// </code>
         /// </example>
-        public virtual async Task<List<T>> GetPages<T>(Func<int, Task<PagedResult<T>>> pagedQuery, int fromPage = 1, int toPage = int.MaxValue)
+        public virtual async Task<List<T>> GetPages<T>(
+            Func<int, Task<PagedResult<T>>> pagedQuery,
+            int fromPage = 1,
+            int toPage = int.MaxValue,
+            CancellationToken cancellationToken = default(CancellationToken))
         {
+            // Preconditions
             if (pagedQuery == null) throw new ArgumentNullException(nameof(pagedQuery));
             Utilities.CheckPageArgument(fromPage);
             Utilities.CheckPageArgument(toPage);
             if (toPage < fromPage) throw new ArgumentException($"Invalid page range specified: {nameof(toPage)} must be larger than or equal to {nameof(fromPage)}", nameof(toPage));
 
+            // Requets specified pages
             bool more;
             List<T> items = new List<T>();
             int page = fromPage;
 
             do
             {
-                // TODO: rate limiting hack... Needs more elegant fix
-                if (page > fromPage) await System.Threading.Tasks.Task.Delay(500);
-
-                // Get next page
-                var result = await pagedQuery(page);
+                var result = await _throttler.ThrottleAsync(() => pagedQuery(page), cancellationToken);
                 if (result.Items != null) items.AddRange(result.Items);
                 // See if there are more items to retrieve
                 more = result.TotalCount > result.Page * result.ItemsPerPage;
@@ -149,7 +172,7 @@ namespace Toggl
             return items;
         }
 
-        internal virtual async Task<T> RequestAsync<T>(HttpMethod method, string uri, object model = null)
+        internal virtual async Task<T> RequestAsync<T>(HttpMethod method, string uri, object model = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             var request = new HttpRequestMessage(method, uri);
             if (model != null)
@@ -157,7 +180,7 @@ namespace Toggl
                 var requestBody = JsonConvert.SerializeObject(model);
                 request.Content = GetJsonContent(requestBody);
             }
-            var response = await _httpClient.SendAsync(request);
+            var response = await _httpClient.SendAsync(request, cancellationToken);
             var responseBody = await response.Content.ReadAsStringAsync();
             if (!response.IsSuccessStatusCode)
             {
@@ -185,7 +208,7 @@ namespace Toggl
         /// Property names are extracted from any <see cref="JsonPropertyAttribute"/>s, if present. Otherwise uses actual property names in model.
         /// </remarks>
         internal virtual object GetMinimalModelForUpdate<T>(T current, T previous, out bool changed, string[] skipProperties = null)
-            where T : IBaseModel
+            where T : IEntity
         {
             if (current == null) throw new ArgumentNullException(nameof(current));
             if (previous == null)
@@ -204,7 +227,7 @@ namespace Toggl
 
             foreach (var prop in properties)
             {
-                if (prop.Name == nameof(IBaseModel.Id)) continue; // skip Id (it's added above)
+                if (prop.Name == nameof(IEntity.Id)) continue; // skip Id (it's added above)
                 var attributes = prop.GetCustomAttributes();
                 if (attributes.OfType<JsonIgnoreAttribute>().Any()) continue; // don't check or serialize ignored attributes
                 if (skipProperties != null && skipProperties.Any(p => p == prop.Name)) continue; // skip specified properties

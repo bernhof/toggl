@@ -10,7 +10,7 @@ namespace Toggl.Models
     /// <summary>
     /// A time entry.
     /// </summary>
-    public partial class TimeEntry : IBaseModel
+    public partial class TimeEntry : IEntity
     {
         /// <summary>
         /// Time entry ID

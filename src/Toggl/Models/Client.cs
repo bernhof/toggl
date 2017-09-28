@@ -10,7 +10,7 @@ namespace Toggl.Models
     /// <summary>
     /// A client.
     /// </summary>
-    public partial class Client : IBaseModel
+    public partial class Client : IEntity
     {
         /*
          {
