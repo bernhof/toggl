@@ -5,13 +5,12 @@
 <#@ import namespace="System.Linq"#>
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Toggl.Models;
 
 namespace Toggl.Services
 {
 <#
-	// TODO: Use Roslyn toolset instead. This template currently doesn't work with optional arguments.
-
     var filePath = Path.GetDirectoryName(Host.TemplateFile);
     var solutionDirectory = Path.Combine(filePath, "");
     var serviceFiles = Directory.GetFiles(solutionDirectory, "*.cs");
@@ -33,10 +32,11 @@ namespace Toggl.Services
 			WriteLine( "    {");
 		
 			var matches = Regex.Matches(text, 
-				@"^\s*?(?'accessmodifiers'.*?)\s+?async\s+?Task\s*<(?'returnValue'.+?)\s*>\s*?(?'name'\w+?)Async\s*
-					(?'allargs'\(\s*(\S+?\s+(?'argname'\w+)(\s*=\*.+?)?[,)]\s*)*)$", 
+				@"^\s*?(?'accessmodifiers'.*?)\s+?async\s+?Task\s*<(?'returnValue'.+?)\s*>\s*?(?'name'\w+?)Async\s*"
+					//+ @"(?'allargs'\(\s*(\S+?\s+(?'argname'\w+)?[,)]\s*)*)$", 
+				      + @"(?'allargs'[(]\s*(\S+?\s+(?'argname'\w+)\s*(?:[,)]|\s*?=.+?[,)])\s*)*?[)])\s*$",
+			//            (?'allargs'[(]\s*(\S+?\s+(          \w+)\s*(  [,)]|\s*?=.+[,)])\s*)*?[)])\s*$
 				RegexOptions.ExplicitCapture | 
-				RegexOptions.IgnorePatternWhitespace |
 				RegexOptions.Multiline);
 			
 			foreach (Match match in matches)
@@ -45,9 +45,14 @@ namespace Toggl.Services
 				var returnValue = match.Groups[2].Captures[0].Value;
 				var name = match.Groups[3].Captures[0].Value;
 				var allArguments = match.Groups[4].Captures[0].Value;
-				var callArguments = string.Join(", ", match.Groups[5].Captures.Cast<Capture>().Select(c => c.Value));
+				var callArguments = string.Join(", ", match.Groups[5].Captures.Cast<Capture>()
+					.Select(c => c.Value));
 				if (!isFirstMethod) WriteLine("    ");
-				WriteLine($"        /// <summary>Synchronous (blocking) version of <see cref=\"{name}Async\"/>.</summary>");
+				WriteLine($"        /// <summary>");
+				WriteLine($"        /// Synchronous (blocking) version of <see cref=\"{name}Async\"/>.");
+				WriteLine($"        /// Automatically generated and provided for convenience.");
+				WriteLine($"        /// It is highly recommended to use Async variant of method instead.");
+				WriteLine($"        /// </summary>");
 				WriteLine($"{accessModifiers} {returnValue} {name}{allArguments.Trim()}");
 				WriteLine($"            => {name}Async({callArguments}).GetAwaiter().GetResult();");
 
