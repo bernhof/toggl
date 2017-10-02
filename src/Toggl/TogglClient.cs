@@ -32,7 +32,7 @@ namespace Toggl
         /// </remarks>
         public static LeakyBucketThrottler CreateSafeThrottler()
         {
-            return new LeakyBucketThrottler(TimeSpan.FromSeconds(1), 1);
+            return new LeakyBucketThrottler(1, TimeSpan.FromSeconds(1));
         }
 
         #region Services

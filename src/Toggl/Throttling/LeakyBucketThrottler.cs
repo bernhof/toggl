@@ -11,25 +11,31 @@ namespace Toggl.Throttling
     public class LeakyBucketThrottler : IThrottler
     {
         private readonly SemaphoreSlim _waitLock = new SemaphoreSlim(1, 1);
-        private readonly object _logLock = new object();
 
-        private readonly int _maxRequests;
-        private readonly TimeSpan _interval;
-        private readonly ConcurrentQueue<DateTimeOffset> _log;
+        private readonly long _bucketCapacity;
+        private readonly TimeSpan _leakInterval;
+        private DateTimeOffset _lastLeak;
+        private long _currentCount;
+
+        /// <summary>
+        /// Delegate that retrieves current time
+        /// </summary>
+        /// <remarks>Included for unit testing purposes</remarks>
+        protected virtual Func<DateTimeOffset> GetCurrentTime { get; set; } = () => DateTimeOffset.Now;
 
         /// <summary>
         /// Creates a new <see cref="LeakyBucketThrottler"/>
         /// </summary>
-        /// <param name="interval">Interval</param>
-        /// <param name="maxRequests">Max. no. of requests that are allowed within the specified <paramref name="interval"/></param>
-        public LeakyBucketThrottler(TimeSpan interval, int maxRequests)
+        /// <param name="bucketCapacity">Bucket capacity, ie. initial maximum number of requests allowed</param>
+        /// <param name="leakInterval">Interval at which the bucket leaks</param>
+        public LeakyBucketThrottler(int bucketCapacity, TimeSpan leakInterval)
         {
-            if (maxRequests < 1) throw new ArgumentException("Maximum number of requests must be 1 or higher", nameof(maxRequests));
-            if (interval < TimeSpan.Zero) throw new ArgumentException("Interval must be a non-negative time span", nameof(interval));
+            if (bucketCapacity < 1) throw new ArgumentException("Bucket capacity must be at least 1", nameof(bucketCapacity));
+            if (leakInterval <= TimeSpan.Zero) throw new ArgumentException("Leak interval must be a positive time span", nameof(leakInterval));
 
-            _log = new ConcurrentQueue<DateTimeOffset>();
-            _interval = interval;
-            _maxRequests = maxRequests;
+            _leakInterval = leakInterval;
+            _bucketCapacity = bucketCapacity;
+            _lastLeak = default(DateTimeOffset);
         }
 
         /// <summary>
@@ -38,9 +44,9 @@ namespace Toggl.Throttling
         /// <param name="func">An asynchronous delegate</param>
         /// <param name="cancellationToken">Cancellation token to observe while waiting to invoke delegate</param>
         /// <returns>An awaitable <see cref="Task"/></returns>
-        public async Task ThrottleAsync(Func<Task> func, CancellationToken cancellationToken = default(CancellationToken))
+        public virtual async Task ThrottleAsync(Func<Task> func, CancellationToken cancellationToken = default(CancellationToken))
         {
-            await WaitAndLog(cancellationToken);
+            await WaitForEntryAndLogRequest(cancellationToken);
             await func();
         }
 
@@ -51,9 +57,9 @@ namespace Toggl.Throttling
         /// <param name="func">An asynchronous delegate</param>
         /// <param name="cancellationToken">Cancellation token to observe while waiting to invoke delegate</param>
         /// <returns>An awaitable <see cref="Task"/> with return value of type <typeparamref name="T"/></returns>
-        public async Task<T> ThrottleAsync<T>(Func<Task<T>> func, CancellationToken cancellationToken = default(CancellationToken))
+        public virtual async Task<T> ThrottleAsync<T>(Func<Task<T>> func, CancellationToken cancellationToken = default(CancellationToken))
         {
-            await WaitAndLog(cancellationToken);
+            await WaitForEntryAndLogRequest(cancellationToken);
             var result = await func();
             return result;
         }
@@ -63,15 +69,21 @@ namespace Toggl.Throttling
         /// </summary>
         /// <param name="cancellationToken">Cancellation token to observe while waiting</param>
         /// <returns></returns>
-        protected internal async Task WaitAndLog(CancellationToken cancellationToken)
+        /// <remarks>
+        /// Only a single thread at a time will get a fixed wait interval in order to guarantee its validity.
+        /// Other threads simply wait to enter the semaphore. As per SemaphoreSlim documentation,
+        /// there is no guaranteed order in which threads are allowed to enter the semaphore.
+        /// https://docs.microsoft.com/en-us/dotnet/standard/threading/semaphore-and-semaphoreslim
+        /// </remarks>
+        protected async Task WaitForEntryAndLogRequest(CancellationToken cancellationToken)
         {
             await _waitLock.WaitAsync(cancellationToken);
             try
             {
-                // Only a single thread at a time will get a fixed wait interval.
-                // Others will wait to enter the semaphore, ie. wait in line to recevie 
-                await Task.Delay(NextDelay(DateTimeOffset.Now), cancellationToken);
-                Log(DateTimeOffset.Now);
+                Leak();
+                var delay = NextDelay();
+                await WaitInternal(delay, cancellationToken);
+                _currentCount++;
             }
             finally
             {
@@ -80,46 +92,46 @@ namespace Toggl.Throttling
         }
 
         /// <summary>
-        /// Calculates the time to wait before allowing another request
+        /// Lowers the current request count if sufficient time has passed
         /// </summary>
-        /// <param name="nextRequestTime">
-        /// Used to calculate how much time has passed since the first logged request until next request.
-        /// </param>
-        /// <returns>A <see cref="TimeSpan"/> specifying the time to wait before allowing another request</returns>
-        protected internal virtual TimeSpan NextDelay(DateTimeOffset nextRequestTime)
+        protected virtual void Leak()
         {
-            int requestCount = _log.Count;
-            if (requestCount >= _maxRequests && _log.TryPeek(out var firstRequest))
-            {
-                // We are at max. no. of requests currently.
-                // How long has passed since the first logged request?
-                var timeSinceFirstRequest = nextRequestTime.Subtract(firstRequest);
-                if (timeSinceFirstRequest < _interval)
-                {
-                    // Interval has not yet passed, calculate time until interval has passed:
-                    var delay = _interval.Subtract(timeSinceFirstRequest);
-                    return delay;
-                }
-            }
-            // we haven't reached max no. of requests yet, or sufficient time has passed to allow another request.
-            return TimeSpan.Zero;
+            var time = GetCurrentTime();
+
+            // determine how many leaks have occurred since bucket was last leaked:
+            long leakedCount = (long)Math.Floor((double)time.Subtract(_lastLeak).Ticks / _leakInterval.Ticks);
+            _lastLeak = _lastLeak.AddTicks(_leakInterval.Ticks * leakedCount);
+            // update current count (don't go below zero)
+            _currentCount = (leakedCount <= _currentCount) ? _currentCount - leakedCount : 0;
         }
 
         /// <summary>
-        /// Logs that a request was performed at the specified time and trims logs entries that are beyond
+        /// Waits an amount of time
         /// </summary>
-        /// <param name="time">Time of request</param>
-        /// <remarks>
-        /// Assumes that logged request complies with throttling specifications since.
-        /// </remarks>
-        protected internal virtual void Log(DateTimeOffset time)
+        /// <param name="delay">Time to wait</param>
+        /// <param name="cancellationToken">Token to observe while waiting</param>
+        /// <returns>An awaitable <see cref="Task"/> that completes when the specified delay duration has elapsed</returns>
+        protected virtual async Task WaitInternal(TimeSpan delay, CancellationToken cancellationToken)
         {
-            lock (_logLock) // dequeue/enqueue operation must be atomic
+            await Task.Delay(delay, cancellationToken);
+        }
+
+        /// <summary>
+        /// Calculates the time to wait before bucket leaks next
+        /// </summary>
+        /// <returns>A <see cref="TimeSpan"/> specifying the time to wait before bucket leaks</returns>
+        protected virtual TimeSpan NextDelay()
+        {
+            var time = GetCurrentTime();
+            if (_currentCount == _bucketCapacity)
             {
-                while (_log.Count >= _maxRequests)
-                    _log.TryDequeue(out var _); // if we're at max capacity, remove earliest request from log
-                _log.Enqueue(time); // log current request
+                // We are at full capacity currently, so next leak must occur in the future.
+                // Determine how long it'll take before bucket leaks next:
+                var delay = _lastLeak.Add(_leakInterval).Subtract(time);
+                return delay;
             }
+            // bucket isn't full
+            return TimeSpan.Zero;
         }
     }
 }
