@@ -142,7 +142,7 @@ namespace Toggl.Tests
             await sut.ThrottleAsync_AddToInvocationList(invocations);
             await sut.ThrottleAsync_AddToInvocationList(invocations); // again, bucket is now full
 
-            // verify that across 6 invocations, no delays were incurred
+            // verify that across all 6 invocations, no delays were incurred, because bucket was emptied before the last 3
             CollectionAssert.AreEqual(
                 new double[] { 0, 0, 0, 1000, 1000, 1000 },
                 invocations);

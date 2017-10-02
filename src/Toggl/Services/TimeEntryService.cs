@@ -20,19 +20,19 @@ namespace Toggl.Services
         /// <param name="client">Current <see cref="TogglClient"/></param>
         public TimeEntryService(TogglClient client)
         {
-            _client = client;
+            _client = client ?? throw new ArgumentNullException(nameof(client));
         }
 
         /// <summary>
         /// List all time entries created by current user across all accessible workspaces
         /// </summary>
+        /// <param name="since">Include time entries only on or after this date and time. If null, uses server default.</param>
         /// <param name="cancellationToken">Token to observe</param>
         /// <returns></returns>
-        public async Task<List<TimeEntry>> ListMineAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public Task<List<TimeEntry>> ListMineAsync(DateTimeOffset? since = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            // todo: implement since?
-            var response = await _client.Get<List<TimeEntry>>("me/time_entries", cancellationToken);
-            return response;
+            string uri = $"me/time_entries?since={since?.ToUnixTimeSeconds()}";
+            return _client.Get<List<TimeEntry>>(uri, cancellationToken);
         }
 
         /// <summary>
@@ -41,11 +41,12 @@ namespace Toggl.Services
         /// <param name="entry">A new time entry</param>
         /// <param name="cancellationToken">Token to observe</param>
         /// <returns>The new time entry as presented by server</returns>
-        public async Task<TimeEntry> CreateAsync(TimeEntry entry, CancellationToken cancellationToken = default(CancellationToken))
+        public Task<TimeEntry> CreateAsync(TimeEntry entry, CancellationToken cancellationToken = default(CancellationToken))
         {
+            if (entry == null) throw new ArgumentNullException(nameof(entry));
+
             string uri = $"workspaces/{entry.WorkspaceId}/time_entries";
-            var result = await _client.Post(uri, cancellationToken, entry);
-            return result;
+            return _client.Post(uri, cancellationToken, entry);
         }
 
         /// <summary>
@@ -57,7 +58,9 @@ namespace Toggl.Services
         /// <returns></returns>
         public async Task<TimeEntry> UpdateAsync(TimeEntry current, TimeEntry previous = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            object model = _client.GetMinimalModelForUpdate(current, previous, out bool changed, new[] { nameof(TimeEntry.CreatedWith) });
+            if (current == null) throw new ArgumentNullException(nameof(current));
+
+            object model = Utilities.GetMinimalModelForUpdate(current, previous, out bool changed, new[] { nameof(TimeEntry.CreatedWith) });
             if (!changed) return current;
 
             string uri = $"workspaces/{current.WorkspaceId}/time_entries/{current.Id}";

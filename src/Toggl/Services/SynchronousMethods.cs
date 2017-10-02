@@ -23,8 +23,8 @@ namespace Toggl.Services
         /// Automatically generated and provided for convenience.
         /// It is highly recommended to use Async variant of method instead.
         /// </summary>
-        public PagedResult<Project> List(long workspaceId, ActiveState active, int page, CancellationToken cancellationToken = default(CancellationToken))
-            => ListAsync(workspaceId, active, page, cancellationToken).GetAwaiter().GetResult();
+        public PagedResult<Project> List(long workspaceId, DateTimeOffset? since = null, BothBool? active = null, int page = 1, CancellationToken cancellationToken = default(CancellationToken))
+            => ListAsync(workspaceId, since, active, page, cancellationToken).GetAwaiter().GetResult();
     
         /// <summary>
         /// Synchronous (blocking) version of <see cref="CreateAsync"/>.
@@ -46,14 +46,6 @@ namespace Toggl.Services
     public partial class TagService
     {
         /// <summary>
-        /// Synchronous (blocking) version of <see cref="ListAsync"/>.
-        /// Automatically generated and provided for convenience.
-        /// It is highly recommended to use Async variant of method instead.
-        /// </summary>
-        public List<Tag> List(long workspaceId, CancellationToken cancellationToken = default(CancellationToken))
-            => ListAsync(workspaceId, cancellationToken).GetAwaiter().GetResult();
-    
-        /// <summary>
         /// Synchronous (blocking) version of <see cref="CreateAsync"/>.
         /// Automatically generated and provided for convenience.
         /// It is highly recommended to use Async variant of method instead.
@@ -65,14 +57,6 @@ namespace Toggl.Services
     public partial class TaskService
     {
         /// <summary>
-        /// Synchronous (blocking) version of <see cref="CreateAsync"/>.
-        /// Automatically generated and provided for convenience.
-        /// It is highly recommended to use Async variant of method instead.
-        /// </summary>
-        public Models.Task Create(Models.Task task, CancellationToken cancellationToken = default(CancellationToken))
-            => CreateAsync(task, cancellationToken).GetAwaiter().GetResult();
-    
-        /// <summary>
         /// Synchronous (blocking) version of <see cref="ListAsync"/>.
         /// Automatically generated and provided for convenience.
         /// It is highly recommended to use Async variant of method instead.
@@ -82,14 +66,8 @@ namespace Toggl.Services
     }
 
 
+
     public partial class WorkspaceService
     {
-        /// <summary>
-        /// Synchronous (blocking) version of <see cref="ListMineAsync"/>.
-        /// Automatically generated and provided for convenience.
-        /// It is highly recommended to use Async variant of method instead.
-        /// </summary>
-        public List<Workspace> ListMine(CancellationToken cancellationToken = default(CancellationToken))
-            => ListMineAsync(cancellationToken).GetAwaiter().GetResult();
     }
 }

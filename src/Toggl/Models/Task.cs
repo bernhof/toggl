@@ -42,10 +42,10 @@ namespace Toggl.Models
         public long EstimatedSeconds { get; set; }
 
         /// <summary>
-        /// Specifies whether task is active. If false, task is considered archived.
+        /// Specifies whether task is active. If false, task is considered archived. Default is true.
         /// </summary>
         [JsonProperty("active")]
-        public bool Active { get; set; }
+        public bool Active { get; set; } = true;
 
         /// <summary>
         /// Date/time on which task was last modified

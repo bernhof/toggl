@@ -19,7 +19,7 @@ namespace Toggl.Services
         /// <param name="client">Current <see cref="TogglClient"/></param>
         public TaskService(TogglClient client)
         {
-            _client = client;
+            _client = client ?? throw new ArgumentNullException(nameof(client));
         }
 
         /// <summary>
@@ -28,11 +28,10 @@ namespace Toggl.Services
         /// <param name="task">A new task</param>
         /// <param name="cancellationToken">Token to observe</param>
         /// <returns>The new task as presented by server</returns>
-        public async Task<Models.Task> CreateAsync(Models.Task task, CancellationToken cancellationToken = default(CancellationToken))
+        public Task<Models.Task> CreateAsync(Models.Task task, CancellationToken cancellationToken = default(CancellationToken))
         {
             string uri = $"workspaces/{task.WorkspaceId}/projects/{task.ProjectId}/tasks";
-            var result = await _client.Post(uri, cancellationToken, task);
-            return result;
+            return _client.Post(uri, cancellationToken, task);
         }
 
         /// <summary>

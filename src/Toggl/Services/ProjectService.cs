@@ -20,21 +20,27 @@ namespace Toggl.Services
         /// <param name="client">Current <see cref="TogglClient"/></param>
         public ProjectService(TogglClient client)
         {
-            _client = client;
+            _client = client ?? throw new ArgumentNullException(nameof(client));
         }
 
         /// <summary>
         /// Lists all projects in a workspace
         /// </summary>
         /// <param name="workspaceId">ID of workspace</param>
-        /// <param name="active">Specifies whether active and/or archived projects are included in results</param>
+        /// <param name="since">Include projects since specified date and time</param>
+        /// <param name="active">Specifies whether active and/or archived projects are included in results. If null, uses server default.</param>
         /// <param name="page">Page number to retrieve</param>
         /// <param name="cancellationToken">Token to observe</param>
         /// <returns>A <see cref="PagedResult{Project}"/> with specified page of results</returns>
-        public async Task<PagedResult<Project>> ListAsync(long workspaceId, ActiveState active, int page, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<PagedResult<Project>> ListAsync(long workspaceId, DateTimeOffset? since = null, BothBool? active = null, int page = 1, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (page < 1) throw new ArgumentException("Page index must be 1 or higher", nameof(page));
-            string uri = $"workspaces/{workspaceId}/projects?active={Utilities.GetActiveStateString(active)}&page={page}";
+            string uri =
+                $"workspaces/{workspaceId}/projects" +
+                $"?active={active?.ToQueryString()}" +
+                $"&since={since?.ToUnixTimeSeconds()}" +
+                $"&page={page}";
+
             var result = await _client.Get<PagedResult<Project>>(uri, cancellationToken);
             return result;
         }
@@ -61,7 +67,9 @@ namespace Toggl.Services
         /// <returns></returns>
         public async Task<Project> UpdateAsync(Project current, Project before = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            object model = _client.GetMinimalModelForUpdate(current, before, out bool changed);
+            if (current == null) throw new ArgumentNullException(nameof(current));
+
+            object model = Utilities.GetMinimalModelForUpdate(current, before, out bool changed);
             if (!changed) return current;
 
             string uri = $"workspaces/{current.WorkspaceId}/projects/{current.Id}";

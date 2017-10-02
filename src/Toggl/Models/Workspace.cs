@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System;
 
 namespace Toggl.Models
 {
@@ -49,19 +50,64 @@ namespace Toggl.Models
             "csv_upload":null,
             "subscription":null}
         */
-
-        /// <summary>
-        /// Workspace ID
-        /// </summary>
         [JsonProperty("id")]
         public long Id { get; set; }
 
-        /// <summary>
-        /// Workspace name
-        /// </summary>
         [JsonProperty("name")]
         public string Name { get; set; }
 
-        // todo: missing properties
+        [JsonProperty("admin")]
+        public bool Admin { get; set; }
+
+        [JsonProperty("premium")]
+        public bool Premium { get; set; }
+
+        [JsonProperty("business_ws")]
+        public bool BusinessWs { get; set; }
+
+        [JsonProperty("suspended_at"), JsonIgnore]
+        public DateTimeOffset? SuspendedAt { get; set; }
+
+        [JsonProperty("server_deleted_at"), JsonIgnore]
+        public DateTimeOffset? ServerDeletedAt { get; set; }
+
+        [JsonProperty("default_hourly_rate")]
+        public double? DefaultHourlyRate { get; set; }
+
+        [JsonProperty("default_currency")]
+        public string DefaultCurrency { get; set; }
+
+        [JsonProperty("only_admins_may_create_projects")]
+        public bool OnlyAdminsMayCreateProjects { get; set; }
+
+        [JsonProperty("only_admins_see_billable_rates")]
+        public bool OnlyAdminsSeeBillableRates { get; set; }
+
+        [JsonProperty("only_admins_see_team_dashboard")]
+        public bool OnlyAdminsSeeTeamDashboard { get; set; }
+
+        [JsonProperty("projects_billable_by_default")]
+        public bool ProjectsBillableByDefault { get; set; }
+
+        [JsonProperty("rounding")]
+        public int Rounding { get; set; }
+
+        [JsonProperty("rounding_minutes")]
+        public int RoundingMinutes { get; set; }
+
+        [JsonProperty("at"), JsonIgnore]
+        public DateTimeOffset? At { get; set; }
+
+        [JsonProperty("logo_url")]
+        public string LogoUrl { get; set; }
+
+        [JsonProperty("ical_url")]
+        public string ICalUrl { get; set; }
+
+        [JsonProperty("ical_enabled")]
+        public bool ICalEnabled { get; set; }
+
+        //[JsonProperty("subscription")]
+        //public string Subscription { get; set; }
     }
 }

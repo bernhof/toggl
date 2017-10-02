@@ -8,32 +8,29 @@ using Toggl.Models;
 namespace Toggl.Services
 {
     /// <summary>
-    /// Manages clients
+    /// Manages the current user
     /// </summary>
-    public partial class ClientService
+    public class UserService
     {
         private readonly TogglClient _client;
 
         /// <summary>
-        /// Creates a new <see cref="ClientService"/>
+        /// Creates a new <see cref="UserService"/>
         /// </summary>
         /// <param name="client">Current <see cref="TogglClient"/></param>
-        public ClientService(TogglClient client)
+        public UserService(TogglClient client)
         {
             _client = client ?? throw new ArgumentNullException(nameof(client));
         }
 
         /// <summary>
-        /// Creates a new client
+        /// Gets information about the current user
         /// </summary>
-        /// <param name="client">A new client</param>
         /// <param name="cancellationToken">Token to observe</param>
-        /// <returns></returns>
-        public async Task<Client> CreateAsync(Client client, CancellationToken cancellationToken = default(CancellationToken))
+        /// <returns>An awaitable <see cref="Task{User}"/></returns>
+        public Task<User> GetCurrentUser(CancellationToken cancellationToken = default(CancellationToken))
         {
-            string uri = $"workspaces/{client.WorkspaceId}/clients";
-            var result = await _client.Post(uri, cancellationToken, client);
-            return result;
+            return _client.Get<User>("me", cancellationToken);
         }
     }
 }

@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Toggl", "Toggl\Toggl.csproj", "{E5495E02-F8AE-4212-BFE5-C681D25A16AD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Toggl.Tests", "Toggl.Tests\Toggl.Tests.csproj", "{F428C64E-7C3F-4A3D-AA61-C20B6C07825F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Toggl.Tests", "Toggl.Tests\Toggl.Tests.csproj", "{F428C64E-7C3F-4A3D-AA61-C20B6C07825F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

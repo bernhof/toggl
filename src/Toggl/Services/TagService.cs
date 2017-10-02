@@ -20,7 +20,7 @@ namespace Toggl.Services
         /// <param name="client">Current <see cref="TogglClient"/></param>
         public TagService(TogglClient client)
         {
-            _client = client;
+            _client = client ?? throw new ArgumentNullException(nameof(client));
         }
 
         /// <summary>
@@ -29,11 +29,10 @@ namespace Toggl.Services
         /// <param name="workspaceId">Workspace ID</param>
         /// <param name="cancellationToken">Token to observe</param>
         /// <returns>A list of tags in the workspace</returns>
-        public async Task<List<Tag>> ListAsync(long workspaceId, CancellationToken cancellationToken = default(CancellationToken))
+        public Task<List<Tag>> ListAsync(long workspaceId, CancellationToken cancellationToken = default(CancellationToken))
         {
             string uri = $"workspaces/{workspaceId}/tags";
-            var response = await _client.Get<List<Tag>>(uri, cancellationToken);
-            return response;
+            return _client.Get<List<Tag>>(uri, cancellationToken);
         }
 
         /// <summary>

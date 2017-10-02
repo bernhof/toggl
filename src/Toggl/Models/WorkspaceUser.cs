@@ -50,8 +50,7 @@ namespace Toggl.Models
         /// Specifies whether the user is active. If false, user is deactivated and cannot access the workspace. Default is true.
         /// </summary>
         [JsonProperty("is_active")]
-        public bool Active { get => _active; set => _active = value; }
-        private bool _active = true;
+        public bool Active { get; set; } = true;
 
         /// <summary>
         /// Specifies whether user is a workspace administrator. Default is false.

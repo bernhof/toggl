@@ -35,14 +35,5 @@ namespace Toggl.Models
         /// </summary>
         [JsonProperty("at"), JsonIgnore]
         public DateTimeOffset LastModified { get; set; }
-
-        //[JsonConstructor]
-        //public Tag(long id, long workspaceId, string name, DateTimeOffset? at)
-        //{
-        //    Id = id;
-        //    WorkspaceId = workspaceId;
-        //    Name = name;
-        //    At = at ?? new DateTimeOffset(DateTime.UtcNow);
-        //}
     }
 }

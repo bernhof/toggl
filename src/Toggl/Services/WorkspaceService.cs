@@ -21,7 +21,7 @@ namespace Toggl.Services
         /// <param name="client">Current <see cref="TogglClient"/></param>
         public WorkspaceService(TogglClient client)
         {
-            _client = client;
+            _client = client ?? throw new ArgumentNullException(nameof(client));
         }
 
         /// <summary>
@@ -29,10 +29,19 @@ namespace Toggl.Services
         /// </summary>
         /// <param name="cancellationToken">Token to observe</param>
         /// <returns>A list of workspaces</returns>
-        public async Task<List<Workspace>> ListMineAsync(CancellationToken cancellationToken = default(CancellationToken))
+        public Task<List<Workspace>> ListMineAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            var response = await _client.Get<List<Workspace>>("me/workspaces", cancellationToken);
-            return response;
+            return _client.Get<List<Workspace>>("me/workspaces", cancellationToken);
+        }
+
+        /// <summary>
+        /// Lists features for all workspaces that current user belongs to
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public Task<List<WorkspaceFeatureCollection>> ListFeatures(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return _client.Get<List<WorkspaceFeatureCollection>>("me/features", cancellationToken);
         }
     }
 }

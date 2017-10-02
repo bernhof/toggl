@@ -11,9 +11,9 @@ namespace Toggl.Throttling
     public class LeakyBucketThrottler : IThrottler
     {
         private readonly SemaphoreSlim _waitLock = new SemaphoreSlim(1, 1);
-
         private readonly long _bucketCapacity;
         private readonly TimeSpan _leakInterval;
+
         private DateTimeOffset _lastLeak;
         private long _currentCount;
 

@@ -69,7 +69,7 @@ namespace Toggl.Models
         /// </summary>
         [JsonProperty("billable")]
         public bool Billable { get; set; }
-        
+
         [JsonProperty("is_private")]
         public bool Private { get; set; }
 
@@ -78,7 +78,6 @@ namespace Toggl.Models
         /// Default is true.
         /// </summary>
         [JsonProperty("active")]
-        public bool Active { get => m_Active; set => m_Active = value; }
-        private bool m_Active = true; // default value: true
+        public bool Active { get; set; } = true;
     }
 }
