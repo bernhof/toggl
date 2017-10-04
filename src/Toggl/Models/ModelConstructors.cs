@@ -14,6 +14,33 @@
         }
     }
 
+    public partial class CurrentUser
+    {
+        [System.Diagnostics.DebuggerStepThrough]
+        public CurrentUser() { }
+
+        public CurrentUser(CurrentUser basedOn)
+        {
+            Id = basedOn.Id;
+            ApiToken = basedOn.ApiToken;
+            DefaultWorkspaceId = basedOn.DefaultWorkspaceId;
+            Email = basedOn.Email;
+            Fullname = basedOn.Fullname;
+            TimeOfDayFormat = basedOn.TimeOfDayFormat;
+            DateFormat = basedOn.DateFormat;
+            StoreStartAndStopTime = basedOn.StoreStartAndStopTime;
+            BeginningOfWeek = basedOn.BeginningOfWeek;
+            Language = basedOn.Language;
+            ImageUrl = basedOn.ImageUrl;
+            SidebarPiechart = basedOn.SidebarPiechart;
+            At = basedOn.At;
+            Retention = basedOn.Retention;
+            RecordTimeline = basedOn.RecordTimeline;
+            RenderTimeline = basedOn.RenderTimeline;
+            TimelineEnabled = basedOn.TimelineEnabled;
+        }
+    }
+
     public partial class Project
     {
         [System.Diagnostics.DebuggerStepThrough]
@@ -28,6 +55,7 @@
             Color = basedOn.Color;
             Billable = basedOn.Billable;
             Private = basedOn.Private;
+            Active = basedOn.Active;
         }
     }
 
@@ -89,6 +117,21 @@
         }
     }
 
+    public partial class User
+    {
+        [System.Diagnostics.DebuggerStepThrough]
+        public User() { }
+
+        public User(User basedOn)
+        {
+            Id = basedOn.Id;
+            Email = basedOn.Email;
+            Fullname = basedOn.Fullname;
+            Active = basedOn.Active;
+            IsAdmin = basedOn.IsAdmin;
+        }
+    }
+
     public partial class Workspace
     {
         [System.Diagnostics.DebuggerStepThrough]
@@ -98,20 +141,48 @@
         {
             Id = basedOn.Id;
             Name = basedOn.Name;
+            Admin = basedOn.Admin;
+            Premium = basedOn.Premium;
+            BusinessWs = basedOn.BusinessWs;
+            SuspendedAt = basedOn.SuspendedAt;
+            ServerDeletedAt = basedOn.ServerDeletedAt;
+            DefaultHourlyRate = basedOn.DefaultHourlyRate;
+            DefaultCurrency = basedOn.DefaultCurrency;
+            OnlyAdminsMayCreateProjects = basedOn.OnlyAdminsMayCreateProjects;
+            OnlyAdminsSeeBillableRates = basedOn.OnlyAdminsSeeBillableRates;
+            OnlyAdminsSeeTeamDashboard = basedOn.OnlyAdminsSeeTeamDashboard;
+            ProjectsBillableByDefault = basedOn.ProjectsBillableByDefault;
+            Rounding = basedOn.Rounding;
+            RoundingMinutes = basedOn.RoundingMinutes;
+            At = basedOn.At;
+            LogoUrl = basedOn.LogoUrl;
+            ICalUrl = basedOn.ICalUrl;
+            ICalEnabled = basedOn.ICalEnabled;
         }
     }
 
-    public partial class WorkspaceUser
+    public partial class WorkspaceFeature
     {
         [System.Diagnostics.DebuggerStepThrough]
-        public WorkspaceUser() { }
+        public WorkspaceFeature() { }
 
-        public WorkspaceUser(WorkspaceUser basedOn)
+        public WorkspaceFeature(WorkspaceFeature basedOn)
         {
-            Id = basedOn.Id;
-            Email = basedOn.Email;
-            Fullname = basedOn.Fullname;
-            Admin = basedOn.Admin;
+            Name = basedOn.Name;
+            FeatureId = basedOn.FeatureId;
+            Enabled = basedOn.Enabled;
+        }
+    }
+
+    public partial class WorkspaceFeatureCollection
+    {
+        [System.Diagnostics.DebuggerStepThrough]
+        public WorkspaceFeatureCollection() { }
+
+        public WorkspaceFeatureCollection(WorkspaceFeatureCollection basedOn)
+        {
+            WorkspaceId = basedOn.WorkspaceId;
+            Features = basedOn.Features;
         }
     }
 }

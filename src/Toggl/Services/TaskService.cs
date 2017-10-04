@@ -31,21 +31,26 @@ namespace Toggl.Services
         public Task<Models.Task> CreateAsync(Models.Task task, CancellationToken cancellationToken = default(CancellationToken))
         {
             string uri = $"workspaces/{task.WorkspaceId}/projects/{task.ProjectId}/tasks";
-            return _client.Post(uri, cancellationToken, task);
+            return _client.Post(Apis.TogglV9, uri, cancellationToken, task);
         }
 
         /// <summary>
         /// Lists all tasks in a workspace
         /// </summary>
         /// <param name="workspaceId">Workspace ID</param>
-        /// <param name="page"></param>
+        /// <param name="active">Specifies whether active and/or archived projects are included in results. If null, uses server default.</param>
+        /// <param name="page">Page number</param>
         /// <param name="cancellationToken">Token to observe</param>
         /// <returns></returns>
-        public async Task<Models.PagedResult<Models.Task>> ListAsync(long workspaceId, int page, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<Models.PagedResult<Models.Task>> ListAsync(long workspaceId, DateTimeOffset? since = null, BothBool? active = null, int page = 1, CancellationToken cancellationToken = default(CancellationToken))
         {
             Utilities.CheckPageArgument(page);
-            string uri = $"workspaces/{workspaceId}/tasks?active=both&page={page}";
-            var result = await _client.Get<Models.PagedResult<Models.Task>>(uri, cancellationToken);
+            string uri = $"workspaces/{workspaceId}/tasks" +
+                $"?active={active?.ToTrueFalseBoth()}" +
+                $"&since={since?.ToUnixTimeSeconds()}" +
+                $"&page={page}";
+
+            var result = await _client.Get<Models.PagedResult<Models.Task>>(Apis.TogglV9, uri, cancellationToken);
             return result;
         }
     }

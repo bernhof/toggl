@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Toggl.Services;
 using Toggl.Throttling;
-
+using System.Collections.Generic;
 
 namespace Toggl
 {
@@ -54,16 +54,22 @@ namespace Toggl
         /// </summary>
         public TaskService Tasks { get; }
         /// <summary>
+        /// User service
+        /// </summary>
+        public UserService Users { get; }
+        /// <summary>
         /// Workspace service
         /// </summary>
         public WorkspaceService Workspaces { get; }
+        /// <summary>
+        /// Report service
+        /// </summary>
+        public ReportService Reports { get; }
 
         #endregion
 
-        const string _baseUrl = "https://www.toggl.com/api/v9/";
-
         private readonly JsonSerializer _jsonSerializer;
-        private readonly HttpClient _httpClient;
+        private readonly HttpClient _togglHttpClient;
         private readonly IThrottler _throttler;
 
         /// <summary>
@@ -84,22 +90,23 @@ namespace Toggl
             Projects = new ProjectService(this);
             Tags = new TagService(this);
             Tasks = new TaskService(this);
+            Users = new UserService(this);
             Workspaces = new WorkspaceService(this);
+            Reports = new ReportService(this);
 
             _jsonSerializer = JsonSerializer.CreateDefault();
             _throttler = throttler ?? new NeutralThrottler();
 
-            _httpClient = new HttpClient();
-            _httpClient.BaseAddress = new Uri(_baseUrl);
-            _httpClient.DefaultRequestHeaders.Accept.Clear();
-            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            _togglHttpClient = new HttpClient();
+            _togglHttpClient.DefaultRequestHeaders.Accept.Clear();
+            _togglHttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             if (UserAgent != null)
-                _httpClient.DefaultRequestHeaders.UserAgent.Add(UserAgent);
+                _togglHttpClient.DefaultRequestHeaders.UserAgent.Add(UserAgent);
 
             // authorization (basic)
             var authorizationParameter = Convert.ToBase64String(Encoding.GetEncoding("ascii").GetBytes($"{apiToken}:api_token"));
             var header = new AuthenticationHeaderValue("Basic", authorizationParameter);
-            _httpClient.DefaultRequestHeaders.Authorization = header;
+            _togglHttpClient.DefaultRequestHeaders.Authorization = header;
         }
 
         /// <summary>
@@ -107,40 +114,64 @@ namespace Toggl
         /// </summary>
         public void Dispose()
         {
-            _httpClient.Dispose();
+            _togglHttpClient.Dispose();
         }
 
         #region Helpers
 
-        internal Task<T> Get<T>(string uri, CancellationToken cancellationToken, object model = null)
-            => RequestAsync<T>(HttpMethod.Get, uri, model);
+        internal Task<T> Get<T>(string api, string uri, CancellationToken cancellationToken, object model = null)
+            => RequestAsync<T>(HttpMethod.Get, api, uri, model);
 
-        internal Task<T> Post<T>(string uri, CancellationToken cancellationToken, T model)
-            => RequestAsync<T>(HttpMethod.Post, uri, model, cancellationToken);
+        internal Task<T> Post<T>(string api, string uri, CancellationToken cancellationToken, T model)
+            => RequestAsync<T>(HttpMethod.Post, api, uri, model, cancellationToken);
 
-        internal Task<T> Put<T>(string uri, CancellationToken cancellationToken, object model)
-            => RequestAsync<T>(HttpMethod.Put, uri, model);
+        internal Task<T> Put<T>(string api, string uri, CancellationToken cancellationToken, object model)
+            => RequestAsync<T>(HttpMethod.Put, api, uri, model);
 
         private StringContent GetJsonContent(string json)
             => new StringContent(json, Encoding.UTF8, "application/json");
 
         /// <summary>
-        /// Reads through all or specific pages returned by a given query.
+        /// Requests several pages of a paged query and yields all items in the page range
         /// </summary>
         /// <typeparam name="T">Type of item returned by query</typeparam>
         /// <param name="pagedQuery">Query delegate function</param>
         /// <param name="fromPage">First page to read</param>
         /// <param name="toPage">Last page to read (inclusive)</param>
         /// <returns>All items in the specified page range</returns>
-        /// <example>
-        /// <code>
-        /// var result = await togglClient.GetPages(page => togglClient.Tasks.ListAsync(workspaceId: 1234567, page: page));
-        /// </code>
-        /// </example>
         public virtual IObservable<T> GetPages<T>(
             Func<int, Task<Models.PagedResult<T>>> pagedQuery,
             int fromPage = 1,
             int toPage = int.MaxValue)
+            => GetPages<T, Models.PagedResult<T>>(pagedQuery, fromPage, toPage);
+
+        /// <summary>
+        /// Requests several pages of a paged query and yields all items in the page range
+        /// </summary>
+        /// <typeparam name="T">Type of item returned by query</typeparam>
+        /// <param name="pagedQuery">Query delegate function</param>
+        /// <param name="fromPage">First page to read</param>
+        /// <param name="toPage">Last page to read (inclusive)</param>
+        /// <returns>All items in the specified page range</returns>
+        public IObservable<T> GetPages<T>(
+            Func<int, Task<Models.Reports.PagedReportResult<T>>> pagedQuery,
+            int fromPage = 1,
+            int toPage = int.MaxValue)
+            => GetPages<T, Models.Reports.PagedReportResult<T>>(pagedQuery, fromPage, toPage);
+
+        /// <summary>
+        /// Requests several pages of a paged query and yields all items in the page range
+        /// </summary>
+        /// <typeparam name="T">Type of item returned by query</typeparam>
+        /// <typeparam name="TPagedResult">Paged result </typeparam>
+        /// <param name="pagedQuery">Query delegate function</param>
+        /// <param name="fromPage">First page to read</param>
+        /// <param name="toPage">Last page to read (inclusive)</param>
+        /// <returns>All items in the specified page range</returns>
+        protected virtual IObservable<T> GetPages<T, TPagedResult>(
+            Func<int, Task<TPagedResult>> pagedQuery,
+            int fromPage = 1,
+            int toPage = int.MaxValue) where TPagedResult : Models.PagedResult<T>
         {
             // Preconditions
             if (pagedQuery == null) throw new ArgumentNullException(nameof(pagedQuery));
@@ -148,6 +179,7 @@ namespace Toggl
             Utilities.CheckPageArgument(toPage);
             if (toPage < fromPage) throw new ArgumentException($"Invalid page range specified: {nameof(toPage)} must be larger than or equal to {nameof(fromPage)}", nameof(toPage));
 
+            // Define iterator functions that requests all pages in the specified page range:
             var iterator = new Func<IObserver<T>, Task>(async observer =>
             {
                 // Request specified pages
@@ -163,7 +195,7 @@ namespace Toggl
                             observer.OnNext(item);
                     }
                     // See if there are more items to retrieve
-                    more = result.TotalCount > result.Page * result.ItemsPerPage;
+                    more = result.TotalCount > page * result.ItemsPerPage;
                     page++;
                 }
                 while (more && page <= toPage);
@@ -174,9 +206,15 @@ namespace Toggl
             return Observable.Create(iterator);
         }
 
-        internal virtual async Task<T> RequestAsync<T>(HttpMethod method, string uri, object model = null, CancellationToken cancellationToken = default(CancellationToken))
+        internal virtual async Task<T> RequestAsync<T>(
+            HttpMethod method, 
+            string api, 
+            string path, 
+            object model = null, 
+            CancellationToken cancellationToken = default(CancellationToken))
         {
-            var request = new HttpRequestMessage(method, uri);
+            string endpoint = api + path;
+            var request = new HttpRequestMessage(method, endpoint);
             if (model != null)
             {
                 var requestBody = JsonConvert.SerializeObject(model);
@@ -184,7 +222,7 @@ namespace Toggl
             }
 
             var response = await _throttler.ThrottleAsync(
-                () => _httpClient.SendAsync(request, cancellationToken), 
+                () => _togglHttpClient.SendAsync(request, cancellationToken),
                 cancellationToken);
 
             var responseBody = await response.Content.ReadAsStringAsync();

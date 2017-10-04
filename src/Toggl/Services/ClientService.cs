@@ -29,11 +29,16 @@ namespace Toggl.Services
         /// <param name="client">A new client</param>
         /// <param name="cancellationToken">Token to observe</param>
         /// <returns></returns>
-        public async Task<Client> CreateAsync(Client client, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            string uri = $"workspaces/{client.WorkspaceId}/clients";
-            var result = await _client.Post(uri, cancellationToken, client);
-            return result;
-        }
+        public Task<Client> CreateAsync(Client client, CancellationToken cancellationToken = default(CancellationToken))
+            => _client.Post(Apis.TogglV9, $"workspaces/{client.WorkspaceId}/clients", cancellationToken, client);
+
+        /// <summary>
+        /// Lists all clients in a workspace
+        /// </summary>
+        /// <param name="workspaceId">Workspace ID</param>
+        /// <param name="cancellationToken">Token to observe</param>
+        /// <returns>An awaitable <see cref="Task{T}"/> with all clients</returns>
+        public Task<List<Client>> ListAsync(long workspaceId, CancellationToken cancellationToken = default(CancellationToken))
+            => _client.Get<List<Client>>(Apis.TogglV8, $"workspaces/{workspaceId}/clients", cancellationToken);
     }
 }

@@ -7,13 +7,6 @@ namespace Toggl.Services
 {
     public partial class ClientService
     {
-        /// <summary>
-        /// Synchronous (blocking) version of <see cref="CreateAsync"/>.
-        /// Automatically generated and provided for convenience.
-        /// It is highly recommended to use Async variant of method instead.
-        /// </summary>
-        public Client Create(Client client, CancellationToken cancellationToken = default(CancellationToken))
-            => CreateAsync(client, cancellationToken).GetAwaiter().GetResult();
     }
 
     public partial class ProjectService
@@ -43,6 +36,10 @@ namespace Toggl.Services
             => UpdateAsync(current, before, cancellationToken).GetAwaiter().GetResult();
     }
 
+    public partial class ReportService
+    {
+    }
+
     public partial class TagService
     {
         /// <summary>
@@ -61,8 +58,8 @@ namespace Toggl.Services
         /// Automatically generated and provided for convenience.
         /// It is highly recommended to use Async variant of method instead.
         /// </summary>
-        public Models.PagedResult<Models.Task> List(long workspaceId, int page, CancellationToken cancellationToken = default(CancellationToken))
-            => ListAsync(workspaceId, page, cancellationToken).GetAwaiter().GetResult();
+        public Models.PagedResult<Models.Task> List(long workspaceId, DateTimeOffset? since = null, BothBool? active = null, int page = 1, CancellationToken cancellationToken = default(CancellationToken))
+            => ListAsync(workspaceId, since, active, page, cancellationToken).GetAwaiter().GetResult();
     }
 
 

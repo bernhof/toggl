@@ -27,21 +27,20 @@ namespace Toggl.Services
         /// Lists all projects in a workspace
         /// </summary>
         /// <param name="workspaceId">ID of workspace</param>
-        /// <param name="since">Include projects since specified date and time</param>
         /// <param name="active">Specifies whether active and/or archived projects are included in results. If null, uses server default.</param>
-        /// <param name="page">Page number to retrieve</param>
+        /// <param name="page">Page number</param>
         /// <param name="cancellationToken">Token to observe</param>
         /// <returns>A <see cref="PagedResult{Project}"/> with specified page of results</returns>
         public async Task<PagedResult<Project>> ListAsync(long workspaceId, DateTimeOffset? since = null, BothBool? active = null, int page = 1, CancellationToken cancellationToken = default(CancellationToken))
         {
-            if (page < 1) throw new ArgumentException("Page index must be 1 or higher", nameof(page));
+            Utilities.CheckPageArgument(page);
             string uri =
                 $"workspaces/{workspaceId}/projects" +
-                $"?active={active?.ToQueryString()}" +
+                $"?active={active?.ToTrueFalseBoth()}" +
                 $"&since={since?.ToUnixTimeSeconds()}" +
                 $"&page={page}";
 
-            var result = await _client.Get<PagedResult<Project>>(uri, cancellationToken);
+            var result = await _client.Get<PagedResult<Project>>(Apis.TogglV9, uri, cancellationToken);
             return result;
         }
 
@@ -54,7 +53,7 @@ namespace Toggl.Services
         public async Task<Project> CreateAsync(Project project, CancellationToken cancellationToken = default(CancellationToken))
         {
             string uri = $"workspaces/{project.WorkspaceId}/projects";
-            var result = await _client.Post(uri, cancellationToken, project);
+            var result = await _client.Post(Apis.TogglV9, uri, cancellationToken, project);
             return result;
         }
 
@@ -73,7 +72,7 @@ namespace Toggl.Services
             if (!changed) return current;
 
             string uri = $"workspaces/{current.WorkspaceId}/projects/{current.Id}";
-            var result = await _client.Put<Project>(uri, cancellationToken, model);
+            var result = await _client.Put<Project>(Apis.TogglV9, uri, cancellationToken, model);
             return result;
         }
     }

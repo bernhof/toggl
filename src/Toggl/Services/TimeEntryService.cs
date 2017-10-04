@@ -32,7 +32,7 @@ namespace Toggl.Services
         public Task<List<TimeEntry>> ListMineAsync(DateTimeOffset? since = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             string uri = $"me/time_entries?since={since?.ToUnixTimeSeconds()}";
-            return _client.Get<List<TimeEntry>>(uri, cancellationToken);
+            return _client.Get<List<TimeEntry>>(Apis.TogglV9, uri, cancellationToken);
         }
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace Toggl.Services
             if (entry == null) throw new ArgumentNullException(nameof(entry));
 
             string uri = $"workspaces/{entry.WorkspaceId}/time_entries";
-            return _client.Post(uri, cancellationToken, entry);
+            return _client.Post(Apis.TogglV9, uri, cancellationToken, entry);
         }
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace Toggl.Services
             if (!changed) return current;
 
             string uri = $"workspaces/{current.WorkspaceId}/time_entries/{current.Id}";
-            var result = await _client.Put<TimeEntry>(uri, cancellationToken, model);
+            var result = await _client.Put<TimeEntry>(Apis.TogglV9, uri, cancellationToken, model);
             return result;
         }
     }

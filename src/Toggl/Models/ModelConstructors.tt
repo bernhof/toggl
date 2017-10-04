@@ -18,9 +18,12 @@ namespace Toggl.Models
 
     foreach(var modelFile in modelsToGenerate)
     {
+		string[] lines = File.ReadAllLines(modelFile);
+
         var className = Path.GetFileName(modelFile).Replace(".cs", "");
 		if (className == "IEntity") continue;
 		if (className == "PagedResult") continue;
+		if (lines.Any(l => l.Contains(" enum "))) continue;
 		if (className + ".tt" == Path.GetFileName(Host.TemplateFile)) continue;
         if (!isFirst)
             WriteLine("");
@@ -32,7 +35,7 @@ namespace Toggl.Models
         WriteLine($"        public {className}({className} basedOn)");
         WriteLine( "        {");
 
-        foreach(var line in File.ReadAllLines(modelFile))
+        foreach(var line in lines)
         {
             var isProperty = line.Contains("get;");
             if (!isProperty) continue;

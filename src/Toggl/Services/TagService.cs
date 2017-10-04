@@ -32,7 +32,7 @@ namespace Toggl.Services
         public Task<List<Tag>> ListAsync(long workspaceId, CancellationToken cancellationToken = default(CancellationToken))
         {
             string uri = $"workspaces/{workspaceId}/tags";
-            return _client.Get<List<Tag>>(uri, cancellationToken);
+            return _client.Get<List<Tag>>(Apis.TogglV9, uri, cancellationToken);
         }
 
         /// <summary>
@@ -44,7 +44,7 @@ namespace Toggl.Services
         public async Task<Tag> CreateAsync(Tag tag, CancellationToken cancellationToken = default(CancellationToken))
         {
             string uri = $"workspaces/{tag.WorkspaceId}/tags";
-            var result = await _client.Post(uri, cancellationToken, tag);
+            var result = await _client.Post(Apis.TogglV9, uri, cancellationToken, tag);
             return result;
         }
     }

@@ -31,7 +31,7 @@ namespace Toggl.Services
         /// <returns>A list of workspaces</returns>
         public Task<List<Workspace>> ListMineAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            return _client.Get<List<Workspace>>("me/workspaces", cancellationToken);
+            return _client.Get<List<Workspace>>(Apis.TogglV9, "me/workspaces", cancellationToken);
         }
 
         /// <summary>
@@ -41,7 +41,7 @@ namespace Toggl.Services
         /// <returns></returns>
         public Task<List<WorkspaceFeatureCollection>> ListFeatures(CancellationToken cancellationToken = default(CancellationToken))
         {
-            return _client.Get<List<WorkspaceFeatureCollection>>("me/features", cancellationToken);
+            return _client.Get<List<WorkspaceFeatureCollection>>(Apis.TogglV9, "me/features", cancellationToken);
         }
     }
 }

@@ -98,12 +98,23 @@ namespace Toggl
             if (page < 1) throw new ArgumentException("Page number must be 1 or higher", nameof(page));
         }
 
-        internal static string ToQueryString(this BothBool value)
+        internal static string ToTrueFalseBoth(this BothBool value)
         {
             switch (value)
             {
                 case BothBool.False: return "false";
                 case BothBool.True: return "true";
+                case BothBool.Both: return "both";
+                default: throw new InvalidOperationException("Invalid value");
+            }
+        }
+
+        internal static string ToYesNoBoth(this BothBool value)
+        {
+            switch (value)
+            {
+                case BothBool.False: return "no";
+                case BothBool.True: return "yes";
                 case BothBool.Both: return "both";
                 default: throw new InvalidOperationException("Invalid value");
             }
