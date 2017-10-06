@@ -1,4 +1,4 @@
-*This library has just begun development, and lacks maturity in tests, API surface coverage and more, so pull requests are welcome! :-)*
+*This library has just begun development, and lacks maturity in tests, API surface coverage and more. Issues & pull requests are welcome! :-)*
 
 # Toggl .NET Client
 A [.NET Standard 1.3](https://docs.microsoft.com/en-us/dotnet/standard/net-standard) client library for v9 API for Toggl time tracking (http://toggl.com). For certain operations, v8 API is still used, since I haven't yet found a v9 equivalent.
@@ -15,4 +15,4 @@ This library is **built for asynchronous code** and it's recommended that you us
 
 # Acknowledgements
 * Thanks to [Toggl](https://github.com/toggl) for keeping most of their development efforts open source. [toggl/mobileapp](https://github.com/toggl/mobileapp) has provided some code and inspiration for this project.
-* A .NET client for Toggl v8 API, [sochix/Toggl.NET API](https://www.nuget.org/packages/TogglAPI.Net/) and [johnbabb/C--Toggl-Api-Client](https://github.com/johnbabb/C--Toggl-Api-Client)
+* A .NET client for Toggl v8 API, [sochix/Toggl.NET API](https://www.nuget.org/packages/TogglAPI.Net/) which was forked from [johnbabb/C--Toggl-Api-Client](https://github.com/johnbabb/C--Toggl-Api-Client)
