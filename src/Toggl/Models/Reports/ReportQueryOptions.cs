@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Toggl.Models.Reports
@@ -166,43 +167,43 @@ namespace Toggl.Models.Reports
         /// Filters results to include only time entries associated with the specified client IDs. Add 0 to the list to include time entries without a client.
         /// </summary>
         [JsonProperty("client_ids")]
-        public List<long> ClientIds { get; } = new List<long>();
+        public List<long> ClientIds { get; set; }
 
         /// <summary>
         /// Filters results to include only time entries associated with these projects. Use 0 to include time entries without a project.
         /// </summary>
         [JsonProperty("project_ids")]
-        public List<long> ProjectIds { get; } = new List<long>();
+        public List<long> ProjectIds { get; set; }
 
         /// <summary>
         /// Filters results to include only time entries created by these users.
         /// </summary>
         [JsonProperty("user_ids")]
-        public List<long> UserIds { get; } = new List<long>();
+        public List<long> UserIds { get; set; }
 
         /// <summary>
         /// Filters results to include only time entries created by members of the specified groups. This will limit user IDs specified in <see cref="UserIds"/> to members of these groups.
         /// </summary>
         [JsonProperty("members_of_group_ids")]
-        public List<long> MembersOfGroupIds { get; } = new List<long>();
+        public List<long> MembersOfGroupIds { get; set; }
 
         [JsonProperty("or_members_of_group_ids")]
-        public List<long> OrMembersOfGroupIds { get; } = new List<long>();
+        public List<long> OrMembersOfGroupIds { get; set; }
 
         /// <summary>
         /// Filters results to include only time entries with the specified tags. Use 0 to include time entries without any tags.
         /// </summary>
-        public List<long> TagIds { get; } = new List<long>();
+        public List<long> TagIds { get; set; }
 
         /// <summary>
         /// Filters results to include only time entries associated with the specified tasks. Use 0 to include time entries not associated with any task.
         /// </summary>
-        public List<long> TaskIds { get; } = new List<long>();
+        public List<long> TaskIds { get; set; }
 
         /// <summary>
         /// Filters results to include only the specified time entries.
         /// </summary>
-        public List<long> TimeEntryIds { get; } = new List<long>();
+        public List<long> TimeEntryIds { get; set; }
 
         /// <summary>
         /// Filters results to include only time entries whose description matches this string
@@ -248,7 +249,14 @@ namespace Toggl.Models.Reports
                 if (propertyValue == null) return;
                 if (propertyValue is string stringValue && string.IsNullOrEmpty(stringValue)) return;
                 if (queryString.Length > 0) queryString.Append("&");
-                queryString.Append($"{propertyName}={propertyValue}");
+                if (propertyValue is System.Collections.IList list)
+                {
+                    queryString.Append($"{propertyName}={string.Join(",", list.Cast<object>())}");
+                }
+                else
+                {
+                    queryString.Append($"{propertyName}={propertyValue}");
+                }
             }
 
             //append("user_agent", UserAgent);
@@ -256,14 +264,14 @@ namespace Toggl.Models.Reports
             append("since", Since?.ToString("o"));
             append("until", Until?.ToString("o"));
             append("billable", Billable?.ToYesNoBoth());
-            append("client_ids", string.Join(",", ClientIds));
-            append("project_ids", string.Join(",", ProjectIds));
-            append("user_ids", string.Join(",", UserIds));
-            append("members_of_group_ids", string.Join(",", MembersOfGroupIds));
-            append("or_members_of_group_ids", string.Join(",", OrMembersOfGroupIds));
-            append("tag_ids", string.Join(",", TagIds));
-            append("task_ids", string.Join(",", TaskIds));
-            append("time_entry_ids", string.Join(",", TimeEntryIds));
+            append("client_ids", ClientIds);
+            append("project_ids", ProjectIds);
+            append("user_ids", UserIds);
+            append("members_of_group_ids", MembersOfGroupIds);
+            append("or_members_of_group_ids", OrMembersOfGroupIds);
+            append("tag_ids", TagIds);
+            append("task_ids", TaskIds);
+            append("time_entry_ids", TimeEntryIds);
             append("description", System.Net.WebUtility.UrlEncode(Description));
             append("without_description", OnOff(WithoutDescription));
             append("order_field", OrderField);

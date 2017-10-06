@@ -62,13 +62,13 @@ namespace Toggl.Models.Reports
         /// Project ID
         /// </summary>
         [JsonProperty("pid")]
-        public long ProjectId { get; set; }
+        public long? ProjectId { get; set; }
 
         /// <summary>
         /// Task ID
         /// </summary>
         [JsonProperty("tid")]
-        public long TaskId { get; set; }
+        public long? TaskId { get; set; }
 
         /// <summary>
         /// User ID
@@ -139,7 +139,7 @@ namespace Toggl.Models.Reports
         /// <summary>
         /// Project color
         /// </summary>
-        [JsonProperty("project_ color")]
+        [JsonProperty("project_color")]
         public int ProjectColor { get; set; }
 
         /// <summary>
