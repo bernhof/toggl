@@ -7,12 +7,12 @@ Note that V9 of the Toggl API is currently [still in development](https://github
 
 This library is also planned to provide coverage for the [Reports API v2](https://github.com/toggl/toggl_api_docs/blob/master/reports.md). Currently, only [Detailed](https://github.com/toggl/toggl_api_docs/blob/master/reports/detailed.md) reports are supported, but the Weekly and Summary reports will soon follow.
 
-# Asynchronous
+## Asynchronous
 This library is **built for asynchronous code** and it's recommended that you use asynchronous methods whereever available. The library  does, however, provide auto-generated synchronous methods for convenience in some cases.
 
-# License
+## License
 [MIT License](https://github.com/bernhof/toggl/blob/master/LICENSE)
 
-# Acknowledgements
+## Acknowledgements
 * Thanks to [Toggl](https://github.com/toggl) for keeping most of their development efforts open source. [toggl/mobileapp](https://github.com/toggl/mobileapp) has provided some code and inspiration for this project.
 * A .NET client for Toggl v8 API, [sochix/Toggl.NET API](https://www.nuget.org/packages/TogglAPI.Net/) which was forked from [johnbabb/C--Toggl-Api-Client](https://github.com/johnbabb/C--Toggl-Api-Client)
